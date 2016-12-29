@@ -69,12 +69,18 @@ public class ClientConnection {
 		
 		// init streams
 		try {
+			System.out.println("outputstream");
 			// construct and flush output stream
-			outputStream = new ObjectOutputStream(this.socket.getOutputStream());
+			outputStream = this.socket.getOutputStream();
 			outputStream.flush();
 			
+			System.out.println("inputstream");
 			// construct inputStream
-			inputStream = new ObjectInputStream(this.socket.getInputStream());
+			inputStream = this.socket.getInputStream();
+			System.out.println("post inputstream");
+			
+			// start listening
+			listen();
 		}
 		catch(IOException ioe) {
 			System.out.println("inputStream: " + inputStream);

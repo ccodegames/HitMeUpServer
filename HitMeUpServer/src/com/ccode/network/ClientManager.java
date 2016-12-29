@@ -1,8 +1,9 @@
 package com.ccode.network;
 
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
+
+import com.ccode.gui.HitMeUp;
 
 /**
  * ClientManager manages the connections with multiple clients.
@@ -18,14 +19,17 @@ public class ClientManager {
 	private boolean listen = true;
 
 	public ClientManager() {
+		
 		Thread serverThread = new Thread(() -> {
 			try {
-				ServerSocket server = new ServerSocket(1234);
+				ServerSocket server = new ServerSocket(HitMeUp.SERVER_PORT);
 				clients = new ArrayList<ClientConnection>();
 				// infinite loop to accept connections in.
+				HitMeUp.app.display("Listening...");
 				while(listen) {
-					System.out.println("listening...");
-					clients.add(new ClientConnection(this, server.accept()));
+					ClientConnection client = new ClientConnection(this, server.accept());
+					clients.add(client);
+					HitMeUp.app.display("client connected: " + client.getSocket().getInetAddress().getHostAddress());
 					
 					System.out.println("clients: " + clients.toString());
 				}
@@ -54,7 +58,6 @@ public class ClientManager {
 	// remove a client (disconnect)
 	public void disconnect(ClientConnection connection) {
 		clients.remove(connection);
+		HitMeUp.app.display("client disconnected: " + connection.getSocket().getInetAddress().getHostAddress());
 	}
-	
-	
 }
