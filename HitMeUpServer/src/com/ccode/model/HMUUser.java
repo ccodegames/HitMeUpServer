@@ -1,32 +1,39 @@
 package com.ccode.model;
 
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import javax.swing.ImageIcon;
-
 /**
  * HMUUser is a model representing a User of HMU. The user object encapsulates data related to the user such as username, password, etc.
- * implements Serializable to be writtable to file.
+ * implements Serializable to be writable to file.
  * 
  * @author mcjcloud
  *
  */
 public class HMUUser implements Serializable {
 	
+	/**
+	 * the Serialization UID for the object.
+	 */
+	private static final long serialVersionUID = 1941932358752315697L;
+	
+	
 	private String username;
 	private String password;
 	private String firstName;
 	private String lastName;
-	private ImageIcon profileImage;
+	private BufferedImage profileImage;
 	
 	private ArrayList<HMUUser> friends;
+	private ArrayList<HMUUser> blocked;
 	
 	private String email;
 	private String dateCreated;
-	private String feeling;								// TODO: maybe change data type
+	private String mood;								// TODO: maybe change data type
 	
 	/**
 	 * init a user with all data except profileImage, and feeling.
@@ -43,12 +50,17 @@ public class HMUUser implements Serializable {
 		// set date created to current date
 		SimpleDateFormat format = new SimpleDateFormat("MM/dd/yyyy");
 		this.dateCreated = format.format(new Date());
+		
+		// init arrays (empty)
+		friends = new ArrayList<HMUUser>();
+		blocked = new ArrayList<HMUUser>();
 	}
 	
 	
 	/*
 	 *  getter/setter methods
 	 */
+	// Username
 	public String getUsername() {
 		return this.username;
 	}
@@ -56,6 +68,7 @@ public class HMUUser implements Serializable {
 		this.username = username;
 	}
 	
+	// Password
 	public String getPassword() {
 		return password;
 	}
@@ -63,6 +76,7 @@ public class HMUUser implements Serializable {
 		this.password = password;
 	}
 	
+	// First Name
 	public String getFirstName() {
 		return firstName;
 	}
@@ -70,6 +84,7 @@ public class HMUUser implements Serializable {
 		this.firstName = firstName;
 	}
 	
+	// Last Name
 	public String getLastName() {
 		return lastName;
 	}
@@ -77,13 +92,15 @@ public class HMUUser implements Serializable {
 		this.lastName = lastName;
 	}
 	
-	public ImageIcon getProfileImage() {
+	// Profile Image
+	public BufferedImage getProfileImage() {
 		return profileImage;
 	}
-	public void setProfileImage(ImageIcon profileImage) {
+	public void setProfileImage(BufferedImage profileImage) {
 		this.profileImage = profileImage;
 	}
 	
+	// Friends
 	public ArrayList<HMUUser> getFriends() {
 		return friends;
 	}
@@ -92,9 +109,21 @@ public class HMUUser implements Serializable {
 	}
 	public void removeFriend(String username) {
 		// remove a friend based on username.
-		friends.removeIf(e -> e.username == username);
+		friends.removeIf(e -> e.username.equals(username));
 	}
 	
+	// Blocked
+	public ArrayList<HMUUser> getBlocked() {
+		return blocked;
+	}
+	public void block(HMUUser user) {
+		blocked.add(user);
+	}
+	public void unblock(HMUUser user) {
+		blocked.removeIf(e -> e.username.equals(user.username));
+	}
+	
+	// Email
 	public String getEmail() {
 		return email;
 	}
@@ -102,6 +131,7 @@ public class HMUUser implements Serializable {
 		this.email = email;
 	}
 	
+	// Date Created
 	public String getDateCreated() {
 		return dateCreated;
 	}
@@ -109,11 +139,12 @@ public class HMUUser implements Serializable {
 		this.dateCreated = dateCreated;
 	}
 	
-	public String getFeeling() {
-		return feeling;
+	// Mood
+	public String getMood() {
+		return mood;
 	}
-	public void setFeeling(String feeling) {
-		this.feeling = feeling;
+	public void setMood(String mood) {
+		this.mood = mood;
 	}
 	
 }

@@ -4,6 +4,11 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 
 import com.ccode.gui.HitMeUp;
+import com.ccode.model.HMUUser;
+
+import javafx.scene.paint.Color;
+
+import static com.ccode.gui.HitMeUp.app;
 
 /**
  * ClientManager manages the connections with multiple clients.
@@ -23,13 +28,14 @@ public class ClientManager {
 		Thread serverThread = new Thread(() -> {
 			try {
 				ServerSocket server = new ServerSocket(HitMeUp.SERVER_PORT);
+				app.setStatus("Online", Color.GREEN);
 				clients = new ArrayList<ClientConnection>();
 				// infinite loop to accept connections in.
-				HitMeUp.app.display("Listening...");
+				app.display("Listening...");
 				while(listen) {
 					ClientConnection client = new ClientConnection(this, server.accept());
 					clients.add(client);
-					HitMeUp.app.display("client connected: " + client.getSocket().getInetAddress().getHostAddress());
+					app.display("client connected: " + client.getSocket().getInetAddress().getHostAddress());
 					
 					System.out.println("clients: " + clients.toString());
 				}
@@ -48,7 +54,9 @@ public class ClientManager {
 		this.listen = false;
 	}
 	
-	// getter/setter
+	/*
+	 *  getter/setter
+	 */
 	public ArrayList<ClientConnection> getClients() {
 		return clients;
 	}
@@ -58,6 +66,29 @@ public class ClientManager {
 	// remove a client (disconnect)
 	public void disconnect(ClientConnection connection) {
 		clients.remove(connection);
-		HitMeUp.app.display("client disconnected: " + connection.getSocket().getInetAddress().getHostAddress());
+		app.display("client disconnected: " + connection.getSocket().getInetAddress().getHostAddress());
+	}
+	public void disconnectAll() {
+		clients.clear();
+		app.display("All Clients disconnected.");
+	}
+	
+	/**
+	 * Get the ClientConnections with the given User associated.
+	 * 
+	 * @param user
+	 * @return
+	 */
+	public ArrayList<ClientConnection> getClients(HMUUser user) {
+		ArrayList<ClientConnection> result = new ArrayList<ClientConnection>();
+		for(ClientConnection conn : clients) {
+			// if the the username with the connection equals the username provided.
+			if(conn.getUser().getUsername().equals(user.getUsername())) {
+				result.add(conn);	// add the connection to the result array.
+			}
+		}
+		
+		// return the resultant array
+		return result;
 	}
 }

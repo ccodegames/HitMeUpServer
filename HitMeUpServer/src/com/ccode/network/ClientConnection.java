@@ -1,14 +1,19 @@
 package com.ccode.network;
 
-import java.io.EOFException;
+import java.awt.image.DataBufferByte;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 
 import com.ccode.model.HMUUser;
+import com.ccode.model.communication.UserResponse;
+import com.ccode.model.data.DataManager;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonObject;
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 /**
  * ClientConnection extends Socket but adds functionality to manage the user that the Socket is associate with.
@@ -106,23 +111,7 @@ public class ClientConnection {
 		this.socket = socket;
 	}
 	
-	/*
-	 * Methods
-	 */
 	
-	public void sendMessage(String message) {
-		Thread sender = new Thread(() -> {
-			byte[] output = (message + "[END]").getBytes();
-			try {
-				outputStream.write(output);
-				outputStream.flush();
-			}
-			catch(IOException ioe) {
-				ioe.printStackTrace();
-			}
-		});
-		sender.start();
-	}
 	/**
 	 * starts listening for messages on a separate thread.
 	 */
@@ -147,7 +136,6 @@ public class ClientConnection {
 						String finalMessage = message.substring(0, message.length() - "[END]".length());
 						parseInput(finalMessage);
 						message = "";
-						sendMessage(finalMessage);
 					}
 				}
 			}
@@ -184,11 +172,84 @@ public class ClientConnection {
 	 * @param input
 	 */
 	public void parseInput(String input) {
-		if(input.equals("[DISCONNECT]")) {
+		// TODO: convert to json object and parse.
+		String jsonString = input.replaceAll("[END]", "");
+		JsonObject inputJson = Json.parse(jsonString).asObject();
+		
+		String type = inputJson.get("type").asString();
+		switch(type) {
+		case "login":
+			String username = inputJson.get("username").asString();
+			String password = inputJson.get("password").asString();
+			login(username != null ? username : "", password != null ? password : "");
+			break;
 			
 		}
-		else {
-			System.out.println("parsing string: " + input);
+	}
+	
+	
+	// return back to this client.
+	public void returnData(String message) {
+		message += "[END]";
+		byte[] output = message.getBytes();
+		try {
+			outputStream.write(output);
+			outputStream.flush();
+		}
+		catch(IOException ioe) {
+			System.out.println("error writing back to client");
+			ioe.printStackTrace();
 		}
 	}
+	/*
+	 * message methods
+	 */
+	public void login(String username, String password) {
+		Thread loginThread = new Thread(() -> {
+			// TODO: handle a login request json
+			HMUUser requestedUser = DataManager.getUsersWhere(e -> e.getUsername().equals(username)).get(0);	// gets the first user that matches usernames.
+			if(requestedUser != null) {
+				if(requestedUser.getPassword().equals(password)) {
+					// user authenticated
+					this.user = requestedUser;
+					
+					// send back UserResponse.
+					// get image data
+					String encodeImage = "";
+					if(user.getProfileImage() != null) {
+						WritableRaster raster = user.getProfileImage().getRaster();
+						DataBufferByte data = (DataBufferByte) raster.getDataBuffer();
+						encodeImage = Base64.encode(data.getData());
+					}
+					
+					// get friends list and blocked list
+					ArrayList<String> friendUsernames = new ArrayList<String>();
+					ArrayList<String> blockedUsernames = new ArrayList<String>();
+					for(HMUUser user : user.getFriends()) {
+						friendUsernames.add(user.getUsername());
+					}
+					for(HMUUser user : user.getBlocked()) {
+						blockedUsernames.add(user.getUsername());
+					}
+					UserResponse response = new UserResponse(user.getUsername(), user.getFirstName(), user.getLastName(), encodeImage, user.getEmail(), user.getDateCreated(), friendUsernames, blockedUsernames, user.getMood());
+					String responseJson = response.getJson();
+					
+					// return the data back.
+					returnData(responseJson);
+				}
+				else {
+					// TODO: respond with fail.
+				}
+			}
+		});
+		loginThread.start();
+	}
+	
+	public void sendText(String message) {
+		Thread sender = new Thread(() -> {
+			// TODO: handle sending message to recipients with Message json
+		});
+		sender.start();
+	}
+	
 }
