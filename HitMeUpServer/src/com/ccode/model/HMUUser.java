@@ -1,11 +1,16 @@
 package com.ccode.model;
 
-import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.WritableRaster;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Queue;
+
+import com.ccode.model.communication.Message;
+import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 /**
  * HMUUser is a model representing a User of HMU. The user object encapsulates data related to the user such as username, password, etc.
@@ -33,7 +38,9 @@ public class HMUUser implements Serializable {
 	
 	private String email;
 	private String dateCreated;
-	private String mood;								// TODO: maybe change data type
+	private Mood mood;								// TODO: maybe change data type
+	
+	private Queue<Message> messageBuffer;
 	
 	/**
 	 * init a user with all data except profileImage, and feeling.
@@ -52,8 +59,9 @@ public class HMUUser implements Serializable {
 		this.dateCreated = format.format(new Date());
 		
 		// init arrays (empty)
-		friends = new ArrayList<HMUUser>();
-		blocked = new ArrayList<HMUUser>();
+		this.friends = new ArrayList<HMUUser>();
+		this.blocked = new ArrayList<HMUUser>();
+		this.mood = Mood.Happy;
 	}
 	
 	
@@ -99,6 +107,21 @@ public class HMUUser implements Serializable {
 	public void setProfileImage(BufferedImage profileImage) {
 		this.profileImage = profileImage;
 	}
+	public String getBase64ProfileImage() {
+		// get image data
+		
+		String encodeImage = "";
+		if(getProfileImage() != null) {
+			WritableRaster raster = getProfileImage().getRaster();
+			DataBufferByte data = (DataBufferByte) raster.getDataBuffer();
+			encodeImage = Base64.encode(data.getData());
+			
+			return encodeImage;
+		}
+		else {
+			return "";
+		}
+	}
 	
 	// Friends
 	public ArrayList<HMUUser> getFriends() {
@@ -140,11 +163,19 @@ public class HMUUser implements Serializable {
 	}
 	
 	// Mood
-	public String getMood() {
+	public Mood getMood() {
 		return mood;
 	}
-	public void setMood(String mood) {
+	public void setMood(Mood mood) {
 		this.mood = mood;
+	}
+	
+	// Message Queue
+	public void queue(Message message) {
+		messageBuffer.offer(message);
+	}
+	public Message pollBuffer() {
+		return messageBuffer.poll();
 	}
 	
 }

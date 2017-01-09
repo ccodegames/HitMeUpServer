@@ -125,7 +125,7 @@ public class HitMeUp extends Application {
 		// TODO: remove test user
 		HMUUser testUser = new HMUUser("mcjcloud", "brayden1", "Brayden", "Cloud", "brayden14cloud@gmail.com");
 		System.out.println("test user: " + testUser);
-		//DataManager.addUser(testUser);
+		DataManager.addUser(testUser);
 		//DataManager.removeUser(testUser);
 		System.out.println("created user");
 		HitMeUp.app.display("users: " + DataManager.getUsers());
@@ -161,6 +161,14 @@ public class HitMeUp extends Application {
 	public void stop() {
 		// the window was closed.
 		// TODO: save resources.
+		DataManager.removeAllUsers();	// TODO: remove this.
+		try {
+			DataManager.saveUsers();
+		}
+		catch(IOException ioe) {
+			app.display("Error saving data...");
+		}
+		
 		System.exit(0);
 	}
 	

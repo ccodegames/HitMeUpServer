@@ -7,7 +7,8 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 
 public class UserResponse implements Serializable {
-	private String type = "userResponse";
+	private String type = "user";
+	private boolean authenticated;
 	private String username;
 	private String firstName;
 	private String lastName;
@@ -18,7 +19,8 @@ public class UserResponse implements Serializable {
 	private ArrayList<String> blocked;
 	private String mood;
 	
-	public UserResponse(String username, String firstName, String lastName, String profileImage, String email, String dateCreated, ArrayList<String> friends, ArrayList<String> blocked, String mood) {
+	public UserResponse(boolean authenticated, String username, String firstName, String lastName, String profileImage, String email, String dateCreated, ArrayList<String> friends, ArrayList<String> blocked, String mood) {
+		this.authenticated = authenticated;
 		this.username = username;
 		this.firstName = firstName;
 		this.lastName = lastName;
@@ -28,11 +30,23 @@ public class UserResponse implements Serializable {
 		this.friends = friends;
 		this.blocked = blocked;
 		this.mood = mood;
+		
+		if(this.friends == null) {
+			this.friends = new ArrayList<String>();
+		}
+		if(this.blocked == null) {
+			this.blocked = new ArrayList<String>();
+		}
 	}
 	
-	public String getJson() {
+	public static UserResponse getUnauthenticatedResponse() {
+		return new UserResponse(false, "", "", "", "", "", "", null, null, "");
+	}
+	
+	public JsonObject getJson() {
 		JsonObject obj = new JsonObject();
 		obj.add("type", type);
+		obj.add("authenticated", authenticated);
 		obj.add("username", username);
 		obj.add("firstName", firstName);
 		obj.add("lastName", lastName);
@@ -56,6 +70,6 @@ public class UserResponse implements Serializable {
 		obj.add("mood", mood);
 		
 		// return the assembled json
-		return obj.toString();
+		return obj;
 	}
 }
