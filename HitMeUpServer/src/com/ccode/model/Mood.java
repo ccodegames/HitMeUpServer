@@ -15,11 +15,11 @@ public enum Mood {
 	public String toString() {
 		switch(this) {
 		case Happy:
-			return "Happy";
+			return "happy";
 		case Sad:
-			return "Sad";
+			return "sad";
 		default:
-			return "Happy";
+			return "happy";
 		}
 	}
 }

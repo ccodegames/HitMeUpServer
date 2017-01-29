@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import com.ccode.model.HMUUser;
+import com.ccode.model.Mood;
 import com.ccode.model.data.DataManager;
 import com.ccode.network.ClientManager;
 
@@ -124,6 +125,7 @@ public class HitMeUp extends Application {
 		System.out.println("loaded users: " + loaded);
 		// TODO: remove test user
 		HMUUser testUser = new HMUUser("mcjcloud", "brayden1", "Brayden", "Cloud", "brayden14cloud@gmail.com");
+		testUser.setMood(Mood.Happy);
 		System.out.println("test user: " + testUser);
 		DataManager.addUser(testUser);
 		//DataManager.removeUser(testUser);
