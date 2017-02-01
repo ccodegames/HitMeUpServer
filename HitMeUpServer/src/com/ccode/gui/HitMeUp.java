@@ -125,9 +125,15 @@ public class HitMeUp extends Application {
 		System.out.println("loaded users: " + loaded);
 		// TODO: remove test user
 		HMUUser testUser = new HMUUser("mcjcloud", "brayden1", "Brayden", "Cloud", "brayden14cloud@gmail.com");
+		HMUUser testUser2 = new HMUUser("gabecastro", "password", "Gabe", "Castro", "arbemail@gmail.com");
 		testUser.setMood(Mood.Happy);
+		testUser2.setMood(Mood.Sad);
 		System.out.println("test user: " + testUser);
 		DataManager.addUser(testUser);
+		DataManager.addUser(testUser2);
+		
+		testUser.addFriend(testUser2);
+		testUser2.addFriend(testUser);
 		//DataManager.removeUser(testUser);
 		System.out.println("created user");
 		HitMeUp.app.display("users: " + DataManager.getUsers());

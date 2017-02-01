@@ -8,9 +8,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Queue;
+import java.util.UUID;
 
 import com.ccode.model.communication.Message;
 import com.sun.org.apache.xml.internal.security.utils.Base64;
+
+import java.util.UUID;
 
 /**
  * HMUUser is a model representing a User of HMU. The user object encapsulates data related to the user such as username, password, etc.
@@ -26,7 +29,7 @@ public class HMUUser implements Serializable {
 	 */
 	private static final long serialVersionUID = 1941932358752315697L;
 	
-	
+	private String guid;
 	private String username;
 	private String password;
 	private String firstName;
@@ -48,6 +51,7 @@ public class HMUUser implements Serializable {
 	 * @return HMUUser
 	 */
 	public HMUUser(String username, String password, String firstName, String lastName, String email) {
+		this.guid = UUID.randomUUID().toString();
 		this.username = username;
 		this.password = password;
 		this.firstName = firstName;
@@ -68,6 +72,10 @@ public class HMUUser implements Serializable {
 	/*
 	 *  getter/setter methods
 	 */
+	// UUID
+	public String getGUID() {
+		return this.guid;
+	}
 	// Username
 	public String getUsername() {
 		return this.username;
@@ -178,4 +186,31 @@ public class HMUUser implements Serializable {
 		return messageBuffer.poll();
 	}
 	
+	// get relationship to user
+	public ArrayList<UserRelationProperty> relationsTo(HMUUser user) {
+		// check each possible relation
+		ArrayList<UserRelationProperty> relations = new ArrayList<UserRelationProperty>();
+		
+		// friend
+		if(getFriends().contains(user)) {
+			relations.add(UserRelationProperty.Friend);
+		}
+		
+		// blocked
+		if(getBlocked().contains(user)) {
+			relations.add(UserRelationProperty.Blocked);
+		}
+		
+		// if empty still, none
+		if(relations.isEmpty()) {
+			relations.add(UserRelationProperty.None);
+		}
+		
+		return relations;
+	}
+	
+	@Override
+	public String toString() {
+		return getUsername() + ":" + getGUID();
+	}
 }

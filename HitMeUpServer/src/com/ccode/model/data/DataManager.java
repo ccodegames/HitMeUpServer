@@ -145,4 +145,13 @@ public class DataManager {
 		}
 		return result;
 	}
+	public static HMUUser getFirstUserWhere(Predicate<? super HMUUser> predicate) {
+		ArrayList<HMUUser> users = getUsersWhere(predicate);
+		if(users != null && users.size() > 0) {
+			return users.get(0);
+		}
+		else {
+			return null;
+		}
+	}
 }

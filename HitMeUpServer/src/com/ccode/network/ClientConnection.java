@@ -1,22 +1,22 @@
 package com.ccode.network;
 
-import java.awt.image.DataBufferByte;
-import java.awt.image.WritableRaster;
+import static com.ccode.gui.HitMeUp.app;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.function.Predicate;
+import java.util.UUID;
 
 import com.ccode.model.HMUUser;
 import com.ccode.model.communication.UserResponse;
+import com.ccode.model.communication.UsersResponse;
 import com.ccode.model.data.DataManager;
 import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
-
-import static com.ccode.gui.HitMeUp.app;
+import com.eclipsesource.json.JsonValue;
 
 /**
  * ClientConnection extends Socket but adds functionality to manage the user that the Socket is associate with.
@@ -195,8 +195,16 @@ public class ClientConnection {
 			String email = inputJson.get("email").asString();
 			createUser(username, password, firstName, lastName, email);
 			break;
+		case "usersRequest":
+			JsonArray usernames = inputJson.get("users").asArray();
+			ArrayList<String> unames = new ArrayList<String>();
+			for (JsonValue uname : usernames) {
+				unames.add(uname.asString());
+			}
+			returnUsersData(unames);
+			break;
 		case "message":
-			
+			sendMessage(inputJson);
 			break;
 		default:
 			break;
@@ -204,7 +212,11 @@ public class ClientConnection {
 	}
 	
 	
-	// return back to this client.
+	/**
+	 * Return the given message to the Client.
+	 * 
+	 * @param message
+	 */
 	public void returnData(String message) {
 		message += "[END]";
 		byte[] output = message.getBytes();
@@ -219,6 +231,12 @@ public class ClientConnection {
 	}
 	/*
 	 * message methods
+	 */
+	/**
+	 * handle a login and return the authenticated/unauthenticated user 
+	 * 
+	 * @param username
+	 * @param password
 	 */
 	private void login(String username, String password) {
 		Thread loginThread = new Thread(() -> {
@@ -245,6 +263,7 @@ public class ClientConnection {
 						blockedUsernames.add(user.getUsername());
 					}
 					UserResponse response = new UserResponse(true, 
+							user.getGUID(),
 							user.getUsername(), 
 							user.getFirstName(), 
 							user.getLastName(), 
@@ -252,7 +271,8 @@ public class ClientConnection {
 							user.getEmail(), 
 							user.getDateCreated(), 
 							friendUsernames, 
-							blockedUsernames, 
+							blockedUsernames,
+							null,
 							user.getMood().toString());
 					
 					String responseJson = response.getJson().toString();
@@ -275,6 +295,15 @@ public class ClientConnection {
 		loginThread.start();
 	}
 	
+	/**
+	 * Create a user with the given data and return the User to the client.
+	 * 
+	 * @param username
+	 * @param password
+	 * @param firstName
+	 * @param lastName
+	 * @param email
+	 */
 	private void createUser(String username, String password, String firstName, String lastName, String email) {
 		Thread createThread = new Thread(() -> {
 			HMUUser newUser = new HMUUser(username, password, firstName, lastName, email);
@@ -291,13 +320,10 @@ public class ClientConnection {
 				// get friends list and blocked list
 				ArrayList<String> friendUsernames = new ArrayList<String>();
 				ArrayList<String> blockedUsernames = new ArrayList<String>();
-				for(HMUUser user : user.getFriends()) {
-					friendUsernames.add(user.getUsername());
-				}
-				for(HMUUser user : user.getBlocked()) {
-					blockedUsernames.add(user.getUsername());
-				}
+				ArrayList<String> properties = new ArrayList<String>();
+				
 				UserResponse response = new UserResponse(true, 
+						newUser.getGUID(),
 						newUser.getUsername(), 
 						newUser.getFirstName(), 
 						newUser.getLastName(), 
@@ -305,7 +331,8 @@ public class ClientConnection {
 						newUser.getEmail(), 
 						newUser.getDateCreated(), 
 						friendUsernames, 
-						blockedUsernames, 
+						blockedUsernames,
+						properties,
 						newUser.getMood().toString());
 				
 				String responseJson = response.getJson().toString();
@@ -316,13 +343,64 @@ public class ClientConnection {
 		});
 		createThread.start();
 	}
-
-	private void sendMessage(String message) {
-		Thread sender = new Thread(() -> {
-			// TODO: handle sending message to recipients with Message json
+	
+	/**
+	 * returns an array of user objects associated with the given usernames
+	 * 
+	 * @param usernames
+	 */
+	private void returnUsersData(ArrayList<String> usernames) {
+		Thread usersRequestThread = new Thread(() -> {
+			ArrayList<HMUUser> users = new ArrayList<HMUUser>();
+			for(String username : usernames) {
+				users.addAll(DataManager.getUsersWhere(e -> e.getUsername().equals(username)));
+			}
 			
+			JsonObject result = new UsersResponse(users, getUser()).getJson();
+			// return the data as an array.
+			System.out.println("Users returned: " + result.toString());
+			returnData(result.toString());
 		});
-		sender.start();
+		usersRequestThread.start();
+	}
+
+	/**
+	 * send a message to another user.
+	 * 
+	 * @param message
+	 */
+	private void sendMessage(JsonObject message) {
+		Thread sendThread = new Thread(() -> {
+			// TODO: handle sending message to recipients with Message json
+			System.out.println("sendMessage called");
+			String convoName = message.get("convoName").asString();
+			String convoId = message.get("convoId").asString();
+			
+			if(convoId == null || convoId.equals(""))
+				convoId = UUID.randomUUID().toString();
+			
+			String from = message.get("from").asString();
+			JsonArray recipients = message.get("recipients").asArray();
+			String base64Image = message.get("image").asString();
+			String text = message.get("text").asString();
+			
+			for(JsonValue recipient : recipients) {
+				JsonObject obj = recipient.asObject();
+				String guid = obj.get("userId").asString();
+				//String username = obj.get("username").asString();
+				HMUUser user = DataManager.getFirstUserWhere(e -> e.getGUID().equals(guid));
+				if(user != null) {
+					ArrayList<ClientConnection> clients = manager.getClients(user);
+					for(ClientConnection client : clients) {
+						client.returnData(message.toString());
+					}
+				}
+				else {
+					// do nothing.
+				}
+			}
+		});
+		sendThread.start();
 	}
 	
 }
